@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "46187466-d919-437e-b5cf-f1586d23c249",
+		"_postman_id": "1ae8532f-be79-4f90-9ba9-c62504200d95",
 		"name": "[rsoi][lab3] Library System",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "976707"
@@ -22,7 +22,7 @@
 									"",
 									"    const pageSize = Number(pm.request.url.query.get(\"size\"))",
 									"    const city = decodeURIComponent(pm.request.url.query.get(\"city\"))",
-									"    const libraryUid = pm.collectionVariables.get(\"libraryUid\")",
+									"    const libraryUid = pm.environment.get(\"libraryUid\")",
 									"",
 									"    const response = pm.response.json();",
 									"    pm.expect(response.items).to.be.an(\"array\")",
@@ -130,7 +130,7 @@
 									"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.contains(\"application/json\");",
 									"",
 									"    const pageSize = Number(pm.request.url.query.get(\"size\"))",
-									"    const bookUid = pm.collectionVariables.get(\"bookUid\")",
+									"    const bookUid = pm.environment.get(\"bookUid\")",
 									"",
 									"    const response = pm.response.json();",
 									"    pm.expect(response.items).to.be.an(\"array\")",
@@ -256,7 +256,7 @@
 									"",
 									"    const response = pm.response.json();",
 									"    pm.expect(response.stars).to.be.not.undefined",
-									"    pm.collectionVariables.set(\"stars\", response.stars)",
+									"    pm.environment.set(\"stars\", response.stars)",
 									"})"
 								],
 								"type": "text/javascript"
@@ -335,8 +335,8 @@
 									"    pm.response.to.have.status(200)",
 									"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.contains(\"application/json\");",
 									"",
-									"    const bookUid = pm.collectionVariables.get(\"bookUid\")",
-									"    const libraryUid = pm.collectionVariables.get(\"libraryUid\")",
+									"    const bookUid = pm.environment.get(\"bookUid\")",
+									"    const libraryUid = pm.environment.get(\"libraryUid\")",
 									"",
 									"    const response = pm.response.json();",
 									"    const request = JSON.parse(pm.request.body.raw)",
@@ -357,7 +357,7 @@
 									"    pm.expect(response.library.city).to.be.eq(\"Москва\")",
 									"    pm.expect(response.library.address).to.be.eq(\"2-я Бауманская ул., д.5, стр.1\")",
 									"",
-									"    pm.collectionVariables.set(\"reservationUid\", response.reservationUid)",
+									"    pm.environment.set(\"reservationUid\", response.reservationUid)",
 									"})"
 								],
 								"type": "text/javascript"
@@ -457,9 +457,9 @@
 									"    pm.response.to.have.status(200)",
 									"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.contains(\"application/json\");",
 									"",
-									"    const bookUid = pm.collectionVariables.get(\"bookUid\")",
-									"    const libraryUid = pm.collectionVariables.get(\"libraryUid\")",
-									"    const reservationUid = pm.collectionVariables.get(\"reservationUid\")",
+									"    const bookUid = pm.environment.get(\"bookUid\")",
+									"    const libraryUid = pm.environment.get(\"libraryUid\")",
+									"    const reservationUid = pm.environment.get(\"reservationUid\")",
 									"",
 									"    const response = pm.response.json();",
 									"    pm.expect(response).to.be.an(\"array\")",
@@ -657,7 +657,7 @@
 									"    pm.response.to.have.status(200)",
 									"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.contains(\"application/json\");",
 									"",
-									"    const stars = Number(pm.collectionVariables.get(\"stars\"))",
+									"    const stars = Number(pm.environment.get(\"stars\"))",
 									"",
 									"    const response = pm.response.json();",
 									"    pm.expect(response.stars).to.be.eq(stars + 1)",
@@ -733,9 +733,9 @@
 					"script": {
 						"type": "text/javascript",
 						"exec": [
-							"pm.collectionVariables.set(\"libraryUid\", \"83575e12-7ce0-48ee-9931-51919ff3c9ee\")",
-							"pm.collectionVariables.set(\"bookUid\", \"f7cdc58f-2caf-4b15-9727-f89dcc629b27\")",
-							"pm.collectionVariables.set(\"username\", \"Test Max\")"
+							"pm.environment.set(\"libraryUid\", \"83575e12-7ce0-48ee-9931-51919ff3c9ee\")",
+							"pm.environment.set(\"bookUid\", \"f7cdc58f-2caf-4b15-9727-f89dcc629b27\")",
+							"pm.environment.set(\"username\", \"Test Max\")"
 						]
 					}
 				},
@@ -769,7 +769,7 @@
 											"",
 											"    const pageSize = Number(pm.request.url.query.get(\"size\"))",
 											"    const city = decodeURIComponent(pm.request.url.query.get(\"city\"))",
-											"    const libraryUid = pm.collectionVariables.get(\"libraryUid\")",
+											"    const libraryUid = pm.environment.get(\"libraryUid\")",
 											"",
 											"    const response = pm.response.json();",
 											"    pm.expect(response.items).to.be.an(\"array\")",
@@ -833,7 +833,7 @@
 											"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.contains(\"application/json\");",
 											"",
 											"    const pageSize = Number(pm.request.url.query.get(\"size\"))",
-											"    const bookUid = pm.collectionVariables.get(\"bookUid\")",
+											"    const bookUid = pm.environment.get(\"bookUid\")",
 											"",
 											"    const response = pm.response.json();",
 											"    pm.expect(response.items).to.be.an(\"array\")",
@@ -993,6 +993,85 @@
 					"name": "step2",
 					"item": [
 						{
+							"name": "[failover] Получить рейтинг пользователя",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Получить рейтинг пользователя\", () => {",
+											"    pm.response.to.have.status(200)",
+											"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.contains(\"application/json\");",
+											"",
+											"    const response = pm.response.json();",
+											"    pm.expect(response.stars).to.be.not.undefined",
+											"    pm.environment.set(\"stars\", response.stars)",
+											"})"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"description": "Имя пользователя",
+										"key": "X-User-Name",
+										"value": "{{username}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/rating",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"rating"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Рейтинг пользователя",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"description": "Имя пользователя",
+												"key": "X-User-Name",
+												"value": "{{username}}"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/rating",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"rating"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"stars\": 75\n}"
+								}
+							]
+						},
+						{
 							"name": "[failover] Взять книгу в библиотеке",
 							"event": [
 								{
@@ -1005,8 +1084,8 @@
 											"    pm.response.to.have.status(200)",
 											"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.contains(\"application/json\");",
 											"",
-											"    const bookUid = pm.collectionVariables.get(\"bookUid\")",
-											"    const libraryUid = pm.collectionVariables.get(\"libraryUid\")",
+											"    const bookUid = pm.environment.get(\"bookUid\")",
+											"    const libraryUid = pm.environment.get(\"libraryUid\")",
 											"",
 											"    const response = pm.response.json();",
 											"    const request = JSON.parse(pm.request.body.raw)",
@@ -1027,7 +1106,7 @@
 											"    pm.expect(response.library.city).to.be.eq(\"Москва\")",
 											"    pm.expect(response.library.address).to.be.eq(\"2-я Бауманская ул., д.5, стр.1\")",
 											"",
-											"    pm.collectionVariables.set(\"reservationUid\", response.reservationUid)",
+											"    pm.environment.set(\"reservationUid\", response.reservationUid)",
 											"})"
 										],
 										"type": "text/javascript"
@@ -1085,9 +1164,9 @@
 											"    pm.response.to.have.status(200)",
 											"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.contains(\"application/json\");",
 											"",
-											"    const bookUid = pm.collectionVariables.get(\"bookUid\")",
-											"    const libraryUid = pm.collectionVariables.get(\"libraryUid\")",
-											"    const reservationUid = pm.collectionVariables.get(\"reservationUid\")",
+											"    const bookUid = pm.environment.get(\"bookUid\")",
+											"    const libraryUid = pm.environment.get(\"libraryUid\")",
+											"    const reservationUid = pm.environment.get(\"reservationUid\")",
 											"",
 											"    const response = pm.response.json();",
 											"    pm.expect(response).to.be.an(\"array\")",
@@ -1256,7 +1335,7 @@
 											"    pm.response.to.have.status(200)",
 											"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.contains(\"application/json\");",
 											"",
-											"    const stars = Number(pm.collectionVariables.get(\"stars\"))",
+											"    const stars = Number(pm.environment.get(\"stars\"))",
 											"",
 											"    const response = pm.response.json();",
 											"    pm.expect(response.stars).to.be.eq(stars + 1)",
@@ -1308,9 +1387,9 @@
 					"script": {
 						"type": "text/javascript",
 						"exec": [
-							"pm.collectionVariables.set(\"libraryUid\", \"83575e12-7ce0-48ee-9931-51919ff3c9ee\")",
-							"pm.collectionVariables.set(\"bookUid\", \"f7cdc58f-2caf-4b15-9727-f89dcc629b27\")",
-							"pm.collectionVariables.set(\"username\", \"Test Max\")"
+							"pm.environment.set(\"libraryUid\", \"83575e12-7ce0-48ee-9931-51919ff3c9ee\")",
+							"pm.environment.set(\"bookUid\", \"f7cdc58f-2caf-4b15-9727-f89dcc629b27\")",
+							"pm.environment.set(\"username\", \"Test Max\")"
 						]
 					}
 				},
