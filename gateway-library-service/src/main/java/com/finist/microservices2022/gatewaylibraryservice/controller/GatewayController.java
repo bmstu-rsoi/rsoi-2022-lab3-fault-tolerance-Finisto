@@ -156,7 +156,27 @@ public class GatewayController {
             UserReservationResponse userReservationResponse = postUserReservationEntry(userName, requestBody);
 
             // decrease available count in Library system
-            editAvailableCountByCountRequest(requestBody.getBookUid(), -1);
+            try {
+                editAvailableCountByCountRequest(requestBody.getBookUid(), -1);
+            }
+            catch (HttpClientErrorException ex ){
+                if(ex.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR){
+                    // rollback reservation
+                    rollbackUserReservationEntry(userReservationResponse);
+                    return new ResponseEntity<>(HttpStatus.OK);
+
+                }
+                else{
+                    return new ResponseEntity<>(ex.getStatusCode());
+                }
+            }
+            catch (ResourceAccessException ex){
+                rollbackUserReservationEntry(userReservationResponse);
+                return new ResponseEntity<>(HttpStatus.OK);
+
+            }
+
+            // todo add in queue if rollback
 
             // get book info
             BookInfo bookInfo = getBookInfo(requestBody.getBookUid());
@@ -343,6 +363,19 @@ public class GatewayController {
         return respEntity.getBody();
 //        respEntity = this.restTemplate.getForEntity(reservationUri, UserReservationResponse[].class);
 //        return new ArrayList<>(List.of(Objects.requireNonNull(respEntity.getBody())));
+    }
+
+
+    private URI rollbackUserReservationEntry(UserReservationResponse request){
+        URI reservationUri = UriComponentsBuilder.fromHttpUrl(reservation_url)
+                .path("/api/v1/reservation/rollback")
+                .build()
+//                .encode()
+                .toUri();
+        URI postUri = null;
+        postUri = this.restTemplate.postForLocation(reservationUri, request);
+
+        return postUri;
     }
 
     private UserReservationResponse changeReservationStatusRequest(String status, UUID reservationUid) {

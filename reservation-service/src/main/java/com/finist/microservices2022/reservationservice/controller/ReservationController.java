@@ -77,6 +77,15 @@ public class ReservationController {
         ), HttpStatus.OK);
     }
 
+    @PostMapping("/reservation/rollback")
+    public ResponseEntity<UserReservationResponse> rollbackReservation(@RequestBody UserReservationResponse requestBody) {
+
+        Reservation reservation = reservationRepository.getReservationByReservationUid(UUID.fromString(requestBody.getReservationUid()));
+        reservationRepository.delete(reservation);
+
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
 
     @GetMapping("/reservation")
     public ResponseEntity<UserReservationResponse> getUserReservation(@RequestParam UUID reservationUid){
