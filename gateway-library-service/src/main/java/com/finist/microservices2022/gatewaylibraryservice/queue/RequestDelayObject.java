@@ -1,17 +1,14 @@
 package com.finist.microservices2022.gatewaylibraryservice.queue;
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestTemplate;
-
 import java.net.URI;
+import java.util.UUID;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 
 //@Component
 public class RequestDelayObject<T1, T2> implements Delayed {
+
+    public final UUID requestUid;
 
     public final URI requestUri;
 
@@ -20,16 +17,15 @@ public class RequestDelayObject<T1, T2> implements Delayed {
     public final String httpMethod;
 
     public final Class<T2> responseEntityClass;
-    public final RestTemplate restTemplate;
 
     private final long time;
 
-    public RequestDelayObject(URI requestUri, T1 requestBodyObject, String httpMethod, Class<T2> responseEntityClass, RestTemplate restTemplate, long delayTime) {
+    public RequestDelayObject(UUID requestUid, URI requestUri, T1 requestBodyObject, String httpMethod, Class<T2> responseEntityClass, long delayTime) {
+        this.requestUid = requestUid;
         this.requestUri = requestUri;
         this.requestBodyObject = requestBodyObject;
         this.httpMethod = httpMethod;
         this.responseEntityClass = responseEntityClass;
-        this.restTemplate = restTemplate;
         this.time = System.currentTimeMillis() + delayTime;
     }
 

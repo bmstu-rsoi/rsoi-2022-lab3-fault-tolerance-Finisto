@@ -40,12 +40,14 @@ public class GatewayController {
 
     private BlockingQueue<RequestDelayObject<?, ?>> delayQueue;
 
+    private Map<UUID, Boolean> successRequestsMap = new HashMap<>();
+
     public GatewayController(RestTemplateBuilder restTemplateBuilder) {
         restTemplate = restTemplateBuilder
 //                .errorHandler(new RestTemplateResponseErrorHandler())
                 .build();
         this.delayQueue = new DelayQueue<>();
-        new Thread(new RequestRepeater(delayQueue,restTemplate)).start();
+        new Thread(new RequestRepeater(delayQueue,restTemplate, successRequestsMap)).start();
     }
 
     @GetMapping(value = "/libraries")
@@ -187,7 +189,6 @@ public class GatewayController {
 
             }
 
-            // todo add in queue if rollback?
 
             // get book info
             BookInfo bookInfo = getBookInfo(requestBody.getBookUid());
@@ -273,8 +274,29 @@ public class GatewayController {
         changeReservationStatusRequest(newStatus, reservationUid);
 
         // increase available count in library system
-        editAvailableCountByCountRequest(userReservationResponse.getBookUid(), 1);
-        // todo if service not available add to queue timeout 10sec then continue
+        try {
+            editAvailableCountByCountRequest(userReservationResponse.getBookUid(), 1);
+        }
+        catch (ResourceAccessException ex){
+            // todo if service not available add to queue timeout 10sec then continue
+            URI libraryUri = UriComponentsBuilder.fromHttpUrl(library_url)
+                    .path("/api/v1/editAvailableCount")
+                    .build()
+                    .toUri();
+            UUID requestUid = UUID.randomUUID();
+            successRequestsMap.put(requestUid, false);
+            delayQueue.add(new RequestDelayObject<>(
+                    requestUid, libraryUri, new EditAvailableCountRequest(userReservationResponse.getBookUid(), 1),
+                    "POST", Integer.class, 10
+            ));
+
+
+            while (!successRequestsMap.get(requestUid)){
+
+            }
+            successRequestsMap.remove(requestUid);
+
+        }
 
         // get old info of book
         LibraryBookResponse libraryBook = getLibraryBookResponseRequest(userReservationResponse.getBookUid());
@@ -315,9 +337,10 @@ public class GatewayController {
                     .queryParam("offset", ratingOffset)
                     .build()
                     .toUri();
+            UUID requestUid = UUID.randomUUID();
+//            successRequestsMap.put(requestUid, false);
             delayQueue.add(new RequestDelayObject<Void, Integer>(
-                    ratingUri, null, "POST", Integer.class,
-                    restTemplate, 10));
+                    requestUid, ratingUri, null, "POST", Integer.class, 10));
         }
 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
