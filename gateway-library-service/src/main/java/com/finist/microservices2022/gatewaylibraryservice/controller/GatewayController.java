@@ -135,7 +135,9 @@ public class GatewayController {
 
             return new ResponseEntity<ErrorResponse>(new ErrorResponse(ex.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
+        catch (ResourceAccessException ex){
+            return new ResponseEntity<ErrorResponse>(new ErrorResponse("Bonus Service unavailable"), HttpStatus.SERVICE_UNAVAILABLE);
+        }
     }
 
 
@@ -146,7 +148,13 @@ public class GatewayController {
         List<UserReservationResponse> userReservations = getUserReservationsResponse(userName);
 
         // get rating of user
-        UserRatingResponse urr = getUserRatingResponse(userName);
+        UserRatingResponse urr = null;
+        try {
+            urr = getUserRatingResponse(userName);
+        }
+        catch (ResourceAccessException ex){
+            return new ResponseEntity<>(new ErrorResponse("Bonus Service unavailable"), HttpStatus.SERVICE_UNAVAILABLE);
+        }
 
         // check if user can take new book
         boolean canTakeNewBook = urr.getStars() / 10 > userReservations.size();
@@ -176,7 +184,7 @@ public class GatewayController {
 
             }
 
-            // todo add in queue if rollback
+            // todo add in queue if rollback?
 
             // get book info
             BookInfo bookInfo = getBookInfo(requestBody.getBookUid());
@@ -264,6 +272,7 @@ public class GatewayController {
 
         // increase available count in library system
         editAvailableCountByCountRequest(userReservationResponse.getBookUid(), 1);
+        // todo if service not available add to queue timeout 10sec then continue
 
         // get old info of book
         LibraryBookResponse libraryBook = getLibraryBookResponseRequest(userReservationResponse.getBookUid());
@@ -295,6 +304,7 @@ public class GatewayController {
 
         // edit user rating by ratingOffset
         Integer newRating = editUserRatingByOffset(userName, ratingOffset);
+        // todo if service not available add to queue timeout 10sec then continue
 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 
