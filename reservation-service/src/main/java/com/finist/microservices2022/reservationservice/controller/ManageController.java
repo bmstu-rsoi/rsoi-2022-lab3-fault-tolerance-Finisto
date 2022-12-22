@@ -1,4 +1,4 @@
-package com.finist.microservices2022.gatewaylibraryservice.controller;
+package com.finist.microservices2022.reservationservice.controller;
 
 
 import org.springframework.http.HttpStatus;
@@ -11,12 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/manage")
 public class ManageController {
 
-    public ManageController() {
-    }
-
     @GetMapping("/health")
     public ResponseEntity<?> healthCheck(){
-
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }
