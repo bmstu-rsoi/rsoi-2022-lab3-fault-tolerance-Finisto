@@ -1,6 +1,8 @@
 package com.finist.microservices2022.gatewaylibraryservice.controller;
 
 import com.finist.microservices2022.gatewayapi.model.*;
+import com.finist.microservices2022.gatewaylibraryservice.queue.RequestDelayObject;
+import com.finist.microservices2022.gatewaylibraryservice.queue.RequestRepeater;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.*;
@@ -17,6 +19,8 @@ import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.DelayQueue;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -34,10 +38,14 @@ public class GatewayController {
 
     private final RestTemplate restTemplate;
 
+    private BlockingQueue<RequestDelayObject<?, ?>> delayQueue;
+
     public GatewayController(RestTemplateBuilder restTemplateBuilder) {
         restTemplate = restTemplateBuilder
 //                .errorHandler(new RestTemplateResponseErrorHandler())
                 .build();
+        this.delayQueue = new DelayQueue<>();
+        new Thread(new RequestRepeater(delayQueue,restTemplate)).start();
     }
 
     @GetMapping(value = "/libraries")
@@ -134,8 +142,7 @@ public class GatewayController {
                 return new ResponseEntity<ErrorResponse>(new ErrorResponse(ex.getMessage()), HttpStatus.NOT_FOUND);
 
             return new ResponseEntity<ErrorResponse>(new ErrorResponse(ex.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        catch (ResourceAccessException ex){
+        } catch (ResourceAccessException ex) {
             return new ResponseEntity<ErrorResponse>(new ErrorResponse("Bonus Service unavailable"), HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
@@ -151,8 +158,7 @@ public class GatewayController {
         UserRatingResponse urr = null;
         try {
             urr = getUserRatingResponse(userName);
-        }
-        catch (ResourceAccessException ex){
+        } catch (ResourceAccessException ex) {
             return new ResponseEntity<>(new ErrorResponse("Bonus Service unavailable"), HttpStatus.SERVICE_UNAVAILABLE);
         }
 
@@ -166,19 +172,16 @@ public class GatewayController {
             // decrease available count in Library system
             try {
                 editAvailableCountByCountRequest(requestBody.getBookUid(), -1);
-            }
-            catch (HttpClientErrorException ex ){
-                if(ex.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR){
+            } catch (HttpClientErrorException ex) {
+                if (ex.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR) {
                     // rollback reservation
                     rollbackUserReservationEntry(userReservationResponse);
                     return new ResponseEntity<>(HttpStatus.OK);
 
-                }
-                else{
+                } else {
                     return new ResponseEntity<>(ex.getStatusCode());
                 }
-            }
-            catch (ResourceAccessException ex){
+            } catch (ResourceAccessException ex) {
                 rollbackUserReservationEntry(userReservationResponse);
                 return new ResponseEntity<>(HttpStatus.OK);
 
@@ -236,8 +239,7 @@ public class GatewayController {
             }
             try {
                 library = getLibraryResponse(urr.getLibraryUid());
-            }
-            catch (ResourceAccessException exception){
+            } catch (ResourceAccessException exception) {
                 library = new LibraryResponse(UUID.fromString(urr.getLibraryUid()), null, null, null);
             }
 
@@ -303,8 +305,20 @@ public class GatewayController {
         }
 
         // edit user rating by ratingOffset
-        Integer newRating = editUserRatingByOffset(userName, ratingOffset);
-        // todo if service not available add to queue timeout 10sec then continue
+        try {
+            Integer newRating = editUserRatingByOffset(userName, ratingOffset);
+        } catch (ResourceAccessException ex) {
+            // if service not available add to queue timeout 10sec then continue
+            URI ratingUri = UriComponentsBuilder.fromHttpUrl(rating_url)
+                    .path("/api/v1/rating/edit")
+                    .queryParam("username", userName)
+                    .queryParam("offset", ratingOffset)
+                    .build()
+                    .toUri();
+            delayQueue.add(new RequestDelayObject<Void, Integer>(
+                    ratingUri, null, "POST", Integer.class,
+                    restTemplate, 10));
+        }
 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 
@@ -376,7 +390,7 @@ public class GatewayController {
     }
 
 
-    private URI rollbackUserReservationEntry(UserReservationResponse request){
+    private URI rollbackUserReservationEntry(UserReservationResponse request) {
         URI reservationUri = UriComponentsBuilder.fromHttpUrl(reservation_url)
                 .path("/api/v1/reservation/rollback")
                 .build()
