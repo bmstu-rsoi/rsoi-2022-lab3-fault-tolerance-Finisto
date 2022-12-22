@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -178,7 +179,7 @@ public class GatewayController {
     }
 
     @GetMapping("/reservations")
-    public ResponseEntity<List<BookReservationResponse>> getAllReservations(@RequestHeader(name = "X-User-Name") String userName){
+    public ResponseEntity<List<BookReservationResponse>> getAllReservations(@RequestHeader(name = "X-User-Name") String userName) {
         URI reservationUri = UriComponentsBuilder.fromHttpUrl(reservation_url)
                 .path("/api/v1/reservations")
                 .queryParam("username", userName)
@@ -191,9 +192,22 @@ public class GatewayController {
 
         List<BookReservationResponse> bookReservationResponseList = new ArrayList<>();
         DateFormat outFormatter = new SimpleDateFormat("yyyy-MM-dd");
-        for(UserReservationResponse urr : reservationResponseList){
-            BookInfo book = getBookInfo(urr.getBookUid());
-            LibraryResponse library = getLibraryResponse(urr.getLibraryUid());
+
+        BookInfo book = null;
+        LibraryResponse library = null;
+        for (UserReservationResponse urr : reservationResponseList) {
+            try {
+                book = getBookInfo(urr.getBookUid());
+
+            } catch (ResourceAccessException exception) {
+                book = new BookInfo(urr.getBookUid(), null, null, null);
+            }
+            try {
+                library = getLibraryResponse(urr.getLibraryUid());
+            }
+            catch (ResourceAccessException exception){
+                library = new LibraryResponse(UUID.fromString(urr.getLibraryUid()), null, null, null);
+            }
 
             bookReservationResponseList.add(new BookReservationResponse(
                     UUID.fromString(urr.getReservationUid()),
@@ -211,12 +225,12 @@ public class GatewayController {
 
     @PostMapping("/reservations/{reservationUid}/return")
     public ResponseEntity<?> returnBookToLibrary(@PathVariable UUID reservationUid,
-                                                @RequestHeader(name = "X-User-Name") String userName,
-                                                @RequestBody ReturnBookRequest requestBody){
+                                                 @RequestHeader(name = "X-User-Name") String userName,
+                                                 @RequestBody ReturnBookRequest requestBody) {
 
         // check if reservation exist
         UserReservationResponse userReservationResponse = getUserReservationResponse(reservationUid);
-        if(userReservationResponse == null){
+        if (userReservationResponse == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 
@@ -236,7 +250,7 @@ public class GatewayController {
 
         Integer ratingOffset = 0;
         // check if expired
-        if(newStatus == "EXPIRED")
+        if (newStatus == "EXPIRED")
             ratingOffset -= 10;
 
         // check if condition decreased and decrease rating for each condition
@@ -244,13 +258,13 @@ public class GatewayController {
             case "EXCELLENT" -> ratingOffset -= 20;
             case "GOOD" -> ratingOffset -= 10;
         }
-        switch (newCondition){
+        switch (newCondition) {
             case "EXCELLENT" -> ratingOffset += 20;
             case "GOOD" -> ratingOffset += 10;
         }
 
         // if not expired and condition has not decreased
-        if(!newStatus.equals("EXPIRED") && ratingOffset >= 0){
+        if (!newStatus.equals("EXPIRED") && ratingOffset >= 0) {
             // then increase rating by 1 star
             ratingOffset += 1;
         }
@@ -261,7 +275,6 @@ public class GatewayController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 
     }
-
 
 
     private UserRatingResponse getUserRatingResponse(String userName) {
@@ -313,7 +326,7 @@ public class GatewayController {
         return respEntity.getBody();
     }
 
-    private UserReservationResponse postUserReservationEntry(String userName, TakeBookRequest request){
+    private UserReservationResponse postUserReservationEntry(String userName, TakeBookRequest request) {
         URI reservationUri = UriComponentsBuilder.fromHttpUrl(reservation_url)
                 .path("/api/v1/reservation")
                 .queryParam("username", userName)
@@ -328,7 +341,7 @@ public class GatewayController {
 //        return new ArrayList<>(List.of(Objects.requireNonNull(respEntity.getBody())));
     }
 
-    private UserReservationResponse changeReservationStatusRequest(String status, UUID reservationUid){
+    private UserReservationResponse changeReservationStatusRequest(String status, UUID reservationUid) {
         URI reservationUri = UriComponentsBuilder.fromHttpUrl(reservation_url)
                 .path("/api/v1/changeStatus")
                 .queryParam("status", status)
@@ -342,7 +355,7 @@ public class GatewayController {
         return respEntity.getBody();
     }
 
-    private void editAvailableCountByCountRequest(String bookUid, Integer byCount){
+    private void editAvailableCountByCountRequest(String bookUid, Integer byCount) {
         URI libraryUri = UriComponentsBuilder.fromHttpUrl(library_url)
                 .path("/api/v1/editAvailableCount")
 //                ...
@@ -356,13 +369,13 @@ public class GatewayController {
         headers = new HttpHeaders();
         MediaType mediaType = new MediaType("application", "merge-patch+json");
         headers.setContentType(mediaType);
-        HttpEntity<EditAvailableCountRequest> httpEntity = new HttpEntity<>(new EditAvailableCountRequest(bookUid, byCount),headers);
+        HttpEntity<EditAvailableCountRequest> httpEntity = new HttpEntity<>(new EditAvailableCountRequest(bookUid, byCount), headers);
         respEntity = this.restTemplate.exchange(libraryUri, HttpMethod.POST, httpEntity, Integer.class);
 
         return;
     }
 
-    private String editBookConditionRequest(String bookUid, String condition){
+    private String editBookConditionRequest(String bookUid, String condition) {
         URI libraryUri = UriComponentsBuilder.fromHttpUrl(library_url)
                 .path("/api/v1/book/editCondition")
                 .queryParam("bookUid", bookUid)
@@ -376,7 +389,7 @@ public class GatewayController {
     }
 
 
-    private BookInfo getBookInfo(String bookUid){
+    private BookInfo getBookInfo(String bookUid) {
         URI libraryUri = UriComponentsBuilder.fromHttpUrl(library_url)
                 .path("/api/v1/book")
                 .queryParam("bookUid", bookUid)
@@ -389,7 +402,7 @@ public class GatewayController {
         return respEntity.getBody();
     }
 
-    private LibraryResponse getLibraryResponse(String libraryUid){
+    private LibraryResponse getLibraryResponse(String libraryUid) {
         URI libraryUri = UriComponentsBuilder.fromHttpUrl(library_url)
                 .path("/api/v1/library")
                 .queryParam("libraryUid", libraryUid)
@@ -402,7 +415,7 @@ public class GatewayController {
         return respEntity.getBody();
     }
 
-    private LibraryBookResponse getLibraryBookResponseRequest(String bookUid){
+    private LibraryBookResponse getLibraryBookResponseRequest(String bookUid) {
         URI libraryUri = UriComponentsBuilder.fromHttpUrl(library_url)
                 .path("/api/v1/libraryBook")
                 .queryParam("bookUid", bookUid)
